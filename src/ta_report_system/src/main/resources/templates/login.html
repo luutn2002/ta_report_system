@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.com">
+
+<head>
+  <meta charset=UTF-8>
+  <title>Login</title>
+  <div th:replace="common :: common-css"></div>
+</head>
+
+<body>
+  <h1 class="ps-3 mb-3 bg-dark text-white">Login</h1>
+  <div class="alert alert-danger" id="login-alert" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+  <form method="POST" th:action="@{/login}" class="d-flex flex-column align-items-center" style="margin-top: 150px;">
+    <div class="w-50 mb-3" style="max-width: 600px;">
+      <label class="form-label">User name</label>
+      <input type="text" class="form-control" name="userName">
+    </div>
+    <div class="w-50 mb-3" style="max-width: 600px;">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" name="password">
+    </div>
+    <div th:if="${message}" class="w-50 alert alert-danger" role="alert" style="max-width: 600px;">
+      <p class="mb-0" th:text="${message}"></p>
+    </div>
+    <button type="submit" class="btn btn-dark">Login</button>
+  </form>
+  <div th:replace="common :: common-js"></div>
+  <script>
+    $(document).ready(function(){
+    if(!isHidden($('#login-alert'))){
+        $('#login-alert').fadeTo(2000, 500).slideUp(500, function(){
+        $('#login-alert').slideUp(500);});
+    }
+    });
+    function isHidden(el) {
+      return (el.offsetParent === null)
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns:th="http://www.thymeleaf.com">
+
+<head>
+  <meta charset=UTF-8>
+  <title>Report List</title>
+  <div th:replace="common :: common-css"></div>
+</head>
+
+<body>
+  <div class="ps-3 mb-3 pt-2 bg-dark text-white">
+    <div class="d-flex bd-highlight">
+      <h1 class="flex-grow-1 bd-highlight">Edit Record</h1>
+      <h1 class="me-3 bd-highlight fw-light" th:text="${record.getReport().getAssistant().getUser().getFullName()}"></h1>
+      <h1 class="me-3 bd-highlight fw-light" th:text="${record.getReport().getAssistant().getStudentId()}"></h1>
+      <h1 class="me-3 bd-highlight fw-light" th:text="${record.getReport().getAssistanceType.getName()}"></h1>
+    </div>
+  </div>
+  <div class="d-flex flex-column container w-50 mx-auto mb-3" style="max-width: 1200px;">
+    <div class="d-flex justify-content-start align-items-center mb-4" th:object="${record}">
+      <div class="border-bottom fs-2 pb-1 mb-3 me-5" th:text="|Course Name: *{report.getCourse.getCourseName().getName}|"></div>
+      <div class="border-bottom fs-2 pb-1 mb-3" th:text="|Assistance Type: *{report.getAssistanceType().getName()}|"></div>
+    </div>
+
+    <h4><span class="badge bg-warning text-dark" th:text="${errorMessage}"></span></h4>
+
+    <form th:action="@{/edit/{id}(id=*{reportId})}" th:object="${recordRequest}" method="post">
+      <div class="alert alert-warning" role="alert" id="startEndNotMatchAlert">Your start time should be atleast<br>before your end time.</div>
+      <div class="alert alert-warning" role="alert" id="lowWorkingTimeAlert">You can't create report with working<br>time less than 1 hour.</div>
+      <div class="alert alert-warning" role="alert" id="nightWorkAlert">You can't work from 22:00 - 5:00.</div>
+      <div class="alert alert-warning" role="alert" id="dayWorkLimitAlert">You<br>can't work over 8 hours a day.</div>
+      <div class="alert alert-warning" role="alert" id="lowRestAlert">Work duration longer than 6 hours require atleast 1 hour break.</div>
+      <input type="hidden" th:field="*{id}"> <input type="hidden" th:field="*{reportId}"> <input type="hidden" th:field="*{targetMonth}" class="form-control">
+      <div class="mb-3">
+        <label for="targetDay" class="form-label">Date</label>
+        <div class="input-group">
+          <input type="month" th:field="*{targetMonth}" class="form-control" disabled> <input type="number" th:field="*{targetDay}" class="form-control" min="1" th:max="${valueOfMonth}">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="workCategoryId" class="form-label">Work Category</label>
+        <select name="workCategoryId" class="form-select">
+          <th:block th:each="workCategory : ${@workCategoryRepository.findAll()}">
+            <option th:value="${workCategory.id}" th:text="${workCategory.name}"></option>
+          </th:block>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="startTime" class="form-label">Start Time</label> <input type="time" name="startTime" id="startTime" th:value="*{startTime}" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label for="endTime" class="form-label">End Time</label> <input type="time" name="endTime" id="endTime" th:value="*{endTime}" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label for="breakTime" class="form-label">Break Time</label>
+        <div class="row">
+          <div class="col">
+            <input type="number" name="breakHour" id="breakHour" th:value="*{breakHour}" min="0" max="24" step="1" class="form-control">
+          </div>
+          <div class="col">hour</div>
+          <div class="col">
+            <input type="number" name="breakMinute" id="breakMinute" th:value="*{breakMinute}" min="0" max="60" step="1" class="form-control">
+          </div>
+          <div class="col">minute</div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="breakTimeSend" class="form-label">Break Time (in Minutes)</label>
+        <input type="number" id="breakTimeSend" name="breakTime" class="form-control" readonly>
+      </div>
+      <div class="mb-3">
+        <label for="totalWorkHourDisplay" class="form-label">Total Work Hour (in Hours and Minutes)</label>
+        <input id="totalWorkHourDisplay" value="0" class="form-control" readonly>
+      </div>
+      <div class="mb-3">
+        <label for="totalWorkHourSend" class="form-label">Total Work Hour (in Minutes)</label>
+        <input name="totalWorkHour" id="totalWorkHourSend" value="0" class="form-control" readonly>
+      </div>
+
+      <div class="d-flex bd-highlight">
+        <div class="flex-grow-1 bd-highlight">
+          <a th:href="@{/report/{id}(id=*{reportId})}" class="btn btn-secondary">Back</a>
+        </div>
+        <div class="bd-highlight">
+          <input type="reset" value="Reset" class="btn btn-dark">
+        </div>
+        <div class="ms-3 bd-highlight">
+          <!-- Button trigger modal -->
+          <button type="button" class="btn btn-success" id="createButton" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Edit</button>
+
+          <!-- Modal -->
+          <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="staticBackdropLabel">Confirmation</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">Is this content correct?</div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <input type="submit" value="Edit" class="btn btn-success">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div th:replace="common :: common-js"></div>
+  <script th:src="@{/js/edit_report_detail.js}"></script>
+</body>
+
+</html>

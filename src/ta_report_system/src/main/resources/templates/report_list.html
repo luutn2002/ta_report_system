@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns:th="http://www.thymeleaf.com">
+
+<head>
+  <meta charset=UTF-8>
+  <title>Report List</title>
+  <div th:replace="common :: common-css"></div>
+</head>
+
+<body>
+  <th:block>
+
+    <!-- Modals -->
+    <th:block>
+      <!-- Create Modal -->
+      <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="staticBackdropLabel">Create new record</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form th:action="@{/process_report_list/{id}(id=${assistant.id})}" th:object="${reportAndRecordRequest}" method="post">
+                <div class="alert alert-info" role="alert">
+                  Please note that 'Create' button is not usable until your record is in correct form.
+                </div>
+                <div class="alert alert-warning" role="alert" id="startEndNotMatchAlert">
+                  Your start time should be atleast before your end time.
+                </div>
+                <div class="alert alert-warning" role="alert" id="lowWorkingTimeAlert">
+                  You can't create report with working time less than 1 hour.
+                </div>
+                <div class="alert alert-warning" role="alert" id="nightWorkAlert">
+                  You can't work from 22:00 - 5:00.
+                </div>
+                <div class="alert alert-warning" role="alert" id="dayWorkLimitAlert">
+                  You can't work over 8 hours a day.
+                </div>
+                <div class="alert alert-warning" role="alert" id="lowRestAlert">
+                  Work duration longer than 6 hours require atleast 1 hour break.
+                </div>
+                <input type="hidden" name="assistantId" th:value="${assistant.id}">
+                <div class="mb-3">
+                  <label for="courseNameId" class="form-label">Course Name</label>
+                  <select name="courseNameId" class="form-select">
+                    <th:block th:each="courseName : ${@courseNameRepository.findAll()}">
+                      <option th:value="${courseName.id}" th:text="${courseName.name}"></option>
+                    </th:block>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="date" class="form-label">Date</label> <input type="date" th:field="*{targetDate}" class="form-control" min="2021-01-02" required>
+                </div>
+                <div class="mb-3">
+                  <label for="workCategoryId" class="form-label">Work Category</label>
+                  <select name="workCategoryId" class="form-select">
+                    <th:block th:each="workCategory : ${@workCategoryRepository.findAll()}">
+                      <option th:value="${workCategory.id}" th:text="${workCategory.name}"></option>
+                    </th:block>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="startTime" class="form-label">Start Time</label>
+                  <input type="time" name="startTime" id="startTime" th:value="*{startTime}" class="form-control">
+                </div>
+                <div class="mb-3">
+                  <label for="endTime" class="form-label">End Time</label>
+                  <input type="time" name="endTime" id="endTime" th:value="*{endTime}" class="form-control">
+                </div>
+                <div class="mb-3">
+                  <label for="breakTime" class="form-label">Break Time</label>
+                  <div class="row">
+                    <div class="col">
+                      <input type="number" name="breakHour" id="breakHour" th:value="*{breakHour}" min="0" max="24" step="1" class="form-control">
+                    </div>
+                    <div class="col">hour</div>
+                    <div class="col">
+                      <input type="number" name="breakMinute" id="breakMinute" th:value="*{breakMinute}" min="0" max="60" step="1" class="form-control">
+                    </div>
+                    <div class="col">minute</div>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="breakTimeSend" class="form-label">Break Time (in Minutes)</label>
+                  <input type="number" id="breakTimeSend" name="breakMinute" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                  <label for="totalWorkHourDisplay" class="form-label">Total Work Time (in Hours and Minutes)</label>
+                  <input id="totalWorkHourDisplay" value="0" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                  <label for="totalWorkHourSend" class="form-label">Total Work Time (in Minutes)</label>
+                  <input name="totalWorkMinute" id="totalWorkHourSend" value="0" class="form-control" readonly>
+                </div>
+                <input type="hidden" th:field="*{assistanceTypeId}">
+
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button class="btn btn-primary" id="createButton">Create</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </th:block>
+  </th:block>
+
+
+  <div class="ps-3 mb-3 pt-2 bg-dark text-white">
+    <div class="d-flex bd-highlight">
+      <h1 class="flex-grow-1 bd-highlight">Report List</h1>
+      <h1 class="me-3 bd-highlight fw-light" th:text="${assistant.getUser.getFullName()}"></h1>
+      <h1 class="me-3 bd-highlight fw-light" th:text="${assistant.getStudentId()}"></h1>
+      <h1 class="me-3 bd-highlight fw-light" th:text="${assistanceType}"></h1>
+    </div>
+  </div>
+  <div class="d-flex flex-column container w-50 mx-auto mb-3" style="max-width: 1200px;">
+    <div class="d-flex justify-content-between align-items-center border-bottom mb-4">
+      <div class="fs-2">Reports</div>
+      <div class="d-flex justify-content-right align-items-center">
+        <!-- Create modal trigger button -->
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Create new record</button>
+        <div class="d-none dropdown px-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">Filter</button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+            <li><button class="dropdown-item" type="button">Recent</button></li>
+            <li><button class="dropdown-item" type="button">Month</button></li>
+            <li><button class="dropdown-item" type="button">Course</button></li>
+          </ul>
+        </div>
+        <button type="button" class="d-none btn btn-secondary">Search</button>
+      </div>
+    </div>
+
+    <h4>
+      <div class="badge bg-warning text-dark" th:text="${errorMessage}"></div>
+      <th:block class="weekly-work-limit-errors" th:each="weeklyWorkLimitErrorForm :${workLimitErrorForm.weeklyWorkLimitErrorForms}" th:object="${weeklyWorkLimitErrorForm}">
+        <th:block th:switch="*{weeklyWorkLimitErrorType}">
+          <div th:case="*{WEEKLY_TOTAL_TIME_ERROR}" class="text-wrap text-start mb-1 badge bg-warning text-dark"
+              th:text="|Weekly working hours exceed the limit from *{#temporals.format(weekStartDate, 'yyyy/MM/dd')} to *{#temporals.format(weekEndDate, 'yyyy/MM/dd')}.|"></div>
+          <div th:case="*{WEEKLY_TOTAL_WORK_DAY_ERROR}" class="text-wrap text-start mb-1 badge bg-warning text-dark"
+              th:text="|Working 7 days in a week from *{#temporals.format(weekStartDate, 'yyyy/MM/dd')} to *{#temporals.format(weekEndDate, 'yyyy/MM/dd')}.|"></div>
+        </th>
+      </th:block>
+    </h4>
+
+    <th:block th:each="reportListForm: ${report_list_forms}" th:object="${reportListForm}">
+      <div class="mb-4">
+        <label class="fs-3 mb-1 pe-2" th:text="*{month}"></label> <label class="fs-3 mb-1 px-2" th:text="*{year}"></label>
+        <th:block th:with="monthlyWorkHour=*{monthlyWorkHour}">
+          <th:block th:if="${monthlyWorkHour gt 120}">
+        	  <label class="fs-5 mb-1 px-2 text-danger" th:text="|Total Time: *{monthlyWorkHour}h / 120h|"></label>
+          </th:block>
+        </th:block>
+        <th:block th:with="monthlyWorkHour=*{monthlyWorkHour}">
+          <th:block th:if="${monthlyWorkHour le 120}">
+        	  <label class="fs-5 mb-1 px-2" th:text="|Total Time: *{monthlyWorkHour}h / 120h|"></label>
+          </th:block>
+        </th:block>
+        <button type="button" class="d-none btn btn-secondary btn-sm mb-1">Print</button>
+        <th:block th:each="reportForm: *{reportForms}" th:object="${reportForm}">
+          <div class="border row mb-2 d-flex align-items-center">
+            <div class="col-6 row col-wrap report_title">
+              <div class="col-12 col-sm-3" th:text="*{course}"></div>
+              <div class="col-12 col-sm-3" th:text="|*{monthlyCourseWorkHour}h|"></div>
+            </div>
+            <div class="col-6 col-nowrap fs-7 row align-items-center justify-content-end report_info">
+              <div class="col-10 report_info justify-content-end">
+                <div th:text="|Last edit user: *{lastEditUser}|"></div>
+                <div th:text="|Last edit date: *{lastEditDate}|"></div>
+              </div>
+              <div class="col-2 align-items-center justify-content-end">
+                <form th:action="@{/report/{id}(id=*{reportId})}" method="get">
+                  <button class="btn btn-outline-success btn-sm" type="submit">Open</button>
+                </form>
+                <i class="d-none bi bi-circle col"></i>
+              </div>
+            </div>
+          </div>
+        </th:block>
+      </div>
+    </th:block>
+  </div>
+  <div th:replace="common :: common-js"></div>
+  <script th:src="@{/js/report_list.js}"></script>
+</body>
+
+</html>
